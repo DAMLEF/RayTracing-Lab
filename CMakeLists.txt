@@ -9,4 +9,7 @@ add_executable(RayTracing_Lab
         src/color.h
         src/ray.h
         src/hittable.h
-        src/sphere.h)
+        src/sphere.h
+        src/hittable_list.h
+        src/rt_utils.h
+        src/interval.h)
