@@ -5,4 +5,5 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_executable(RayTracing_Lab
         src/main.cpp
-        src/vec3.h)
+        src/vec3.h
+        src/color.h)
