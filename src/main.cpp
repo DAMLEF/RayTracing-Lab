@@ -4,21 +4,35 @@
 
 # include <iostream>
 
-bool hit_sphere(const point3& center, double radius, const ray& r) {
+double hit_sphere(const point3& center, double radius, const ray& r) {
     vec3 oc = center - r.origin();
 
-    auto a = dot(r.direction(), r.direction());
-    auto b = - 2.0 * dot(r.direction(), oc);
-    auto c = dot(oc, oc) - radius * radius;
+    auto a = r.direction().length_squared();
+    auto h = dot(r.direction(), oc);        // We use the simplification h = -2b to speed up the calculations.
+    auto c = oc.length_squared() - radius * radius;
 
-    auto discriminant = b * b - 4 * a * c;
-    return (discriminant >= 0);
+    auto discriminant = h * h - a * c;
+
+    if(discriminant < 0) {
+        return -1.0;
+    }
+    else {
+        // Factored formula of roots with h
+        return (h - std::sqrt(discriminant))/ a;;
+    }
+
 
 }
 
 color ray_color(const ray& r) {
-    if(hit_sphere(point3(0, 0, -1), 0.5, r)) {
-        return {1, 0, 0};
+
+    // Potential point of impact between the ray and the sphere
+    auto t = hit_sphere(point3(0, 0, -1), 0.5, r);
+    if(t > 0.0) {
+
+        vec3 N = unit_vector(r.at(t) - point3(0, 0, -1));
+
+        return 0.5*color(N.x() + 1, N.y() + 1, N.z() + 1);
     };
 
     vec3 unit_direction = unit_vector(r.direction());

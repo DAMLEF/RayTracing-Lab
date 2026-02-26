@@ -7,4 +7,6 @@ add_executable(RayTracing_Lab
         src/main.cpp
         src/vec3.h
         src/color.h
-        src/ray.h)
+        src/ray.h
+        src/hittable.h
+        src/sphere.h)
