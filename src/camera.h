@@ -15,10 +15,14 @@ private:
     vec3   pixel_delta_u;  // Offset to pixel to the right
     vec3   pixel_delta_v;  // Offset to pixel below
 
+    double pixel_samples_scale;  // Color scale factor for a sum of pixel samples
+
 
     void initialize() {
         image_height = int(image_width / aspect_ratio);
         image_height = (image_height < 1) ? 1 : image_height;
+
+        pixel_samples_scale = 1.0 / samples_per_pixel;
 
         center = point3(0, 0, 0);
 
@@ -42,13 +46,20 @@ private:
 
     }
 
-    color ray_color(const ray& r, const hittable& world) {
+    color ray_color(const ray& r, int depth, const hittable& world) {
+
+        if(depth <= 0) {
+            return {0, 0, 0};
+        }
 
         hit_record rec;
 
         // Potential point of impact between the ray and an element of the world
-        if(world.hit(r, interval(0, infinity), rec)) {
-            return 0.5 * (rec.normal + color(1, 1, 1));
+        if(world.hit(r, interval(0.001, infinity), rec)) {      // We take 0.001 to get rid of th shadow acne problem
+
+            vec3 direction = rec.normal + random_on_hemisphere(rec.normal);
+
+            return 0.5 * ray_color(ray(rec.p, direction), depth - 1, world);
         }
 
         vec3 unit_direction = unit_vector(r.direction());
@@ -57,11 +68,32 @@ private:
         return (1.0 - a)*color(1.0, 1.0, 1.0) + a * color(0.5, 0.7, 1.0);
     }
 
+    ray get_ray(int i, int j) const {
+        // Construct a camera ray originating from the camera origin and directed at randomly sampled
+        // point around the pixel location i, j.
+
+        auto offset = sample_square();
+
+        auto pixel_sample = pixel00_loc  + ((i + offset.x()) * pixel_delta_u) + ((j + offset.y()) * pixel_delta_v);
+
+        auto ray_origin = center;
+
+        // We choose intentionally to not normalize direction to improve slightly code speed and clarity
+        auto ray_direction = pixel_sample - ray_origin;
+
+        return ray(ray_origin, ray_direction);
+    }
+
+    vec3 sample_square() const {
+        // Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
+        return {random_double() - 0.5, random_double() - 0.5, 0};
+    }
 
 public:
-    double aspect_ratio = 1.0;     // Ratio of image width over height
-
+    double aspect_ratio = 1.0;          // Ratio of image width over height
     int image_width = 100;              // Rendered image width in pixel count
+    int samples_per_pixel = 10;         // Count of random samples for each pixel
+    int max_depth = 10;                 // Maximum number of ray bounces into scene
 
     void render(const hittable& world) {
         initialize();
@@ -76,15 +108,14 @@ public:
             std::clog << "\rRendering : " << int((j/float(image_height))*100) << " %" << std::flush;
 
             for(int i = 0; i < image_width; i++) {
+                auto pixel_color = color(0, 0, 0);
 
-                auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
+                for(int sample = 0; sample < samples_per_pixel; sample++) {
+                    ray r = get_ray(i, j);
+                    pixel_color += ray_color(r, max_depth, world);
+                }
 
-                // We choose intentionally to not normalize direction to improve slightly code speed and clarity
-                auto ray_direction = pixel_center - center;
-                ray r(center, ray_direction);
-
-                auto pixel_color = ray_color(r, world);
-                write_color(std::cout, pixel_color);
+                write_color(std::cout, pixel_samples_scale * pixel_color);
             }
         }
 

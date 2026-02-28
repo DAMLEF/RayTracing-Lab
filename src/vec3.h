@@ -4,6 +4,8 @@
 # include <cmath>
 # include <iostream>
 
+# include "rt_utils.h"
+
 class vec3 {
  private:
     double e[3];
@@ -50,6 +52,14 @@ class vec3 {
 
     double norm() const {
         return length();
+    }
+
+    static vec3 random() {
+        return {random_double(), random_double(), random_double()};
+    }
+
+    static vec3 random(double min, double max) {
+        return {random_double(min, max), random_double(min, max), random_double(min, max)};
     }
 
 };
@@ -100,6 +110,31 @@ inline vec3 cross(const vec3& u, const vec3& v) {
 
 inline vec3 unit_vector(const vec3& v) {
     return v / v.length();
+}
+
+inline vec3 random_unit_vector() {
+    while (true) {
+        auto p = vec3::random(-1 ,1);
+        auto len_sq = p.length_squared();
+
+        if(len_sq > float_division_support && len_sq <= 1) {
+            return p / sqrt(len_sq);
+        }
+
+    }
+}
+
+inline vec3 random_on_hemisphere(const vec3& normal) {
+    vec3 on_unit_sphere = random_unit_vector();
+
+    if(dot(normal, on_unit_sphere) > 0.0) {
+        return on_unit_sphere;          // In the same hemisphere as the normal
+    }
+    else {
+        return -on_unit_sphere;
+    }
+
+
 }
 
 #endif //VEC3_H
