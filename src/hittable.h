@@ -3,6 +3,8 @@
 
 #include "ray.h"
 
+class material;     // Will be defined later
+
 class hit_record {
  public:
     point3 p;
@@ -10,6 +12,8 @@ class hit_record {
     double t;
 
     bool front_face;
+
+    shared_ptr<material> mat;
 
     void set_face_normal(const ray& r, const vec3& outward_normal) {
         // Sets the hit record normal vector.
@@ -26,6 +30,7 @@ class hittable {
     virtual ~hittable() = default;
 
     virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
+
 
 };
 
